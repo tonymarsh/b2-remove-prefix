@@ -2,3 +2,6 @@ node_modules/
 worker/
 .cargo-ok
 package-lock.json
+/dist/
+/.idea/
+/wrangler.toml
