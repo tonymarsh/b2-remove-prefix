@@ -162,6 +162,9 @@ async function getB2Directory(request) {
         body: JSON.stringify(requestBody)
     })
 
+    if(!response.ok) {
+        return rewriteErrorResponse(request, response)
+    }
     const htmlResponse = await convertListFileNamesToHTML(request, response)
 
     htmlResponse.headers.set("Cache-Control", `public, immutable, max-age=${CACHE_DIR_SECONDS}`)
