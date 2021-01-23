@@ -1,66 +1,16 @@
 import Router from './router'
 import handleAuthCronJob from './authorization'
+import {getFacesPage, rewriteErrorResponse} from './error_handling'
+import {
+    B2_LIST_FILE_NAMES_ENDPOINT,
+    HTML_CONTENT_TYPE,
+    PLAIN_TEXT_CONTENT_TYPE
+} from './constants'
 
 const CACHE = caches.default
-const ERROR_FACES = [
-    "¯\\_(ツ)_/¯",
-    "(⊙_⊙)？",
-    "ಥ_ಥ",
-    "＼（〇_ｏ）／",
-    "¯\\(°_o)/¯",
-    "╮（╯＿╰）╭",
-    "╮(╯▽╰)╭",
-    "(⊙_⊙;)",
-    "(°ロ°) !",
-    "┐('～`;)┌",
-    "┐(￣ヘ￣;)┌",
-    "( ಠ ʖ̯ ಠ)",
-    "ლ(ಠ_ಠ ლ)",
-    `ლ(¯ロ¯"ლ)`,
-    "┐(￣ヮ￣)┌",
-    "(눈_눈)",
-    "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
-    "(ಠ_ಠ)",
-    "(￣﹃￣)",
-    "(ʘ ͟ʖ ʘ)",
-    "( ಥ ʖ̯ ಥ)",
-    "( ͡° ʖ̯ ͡°)",
-]
 
 const CACHE_AGE_SECONDS = 604800 // 1 week in seconds
-const CACHE_ERRORS_SECONDS = 10  // cache errors like 404 for 10 seconds
 const CACHE_DIR_SECONDS = 30  // cache a directory listing for 10 seconds
-const PLAIN_TEXT_CONTENT_TYPE = "text/plain;charset=utf-8"
-const HTML_CONTENT_TYPE = "text/html;charset=utf-8"
-
-const ERROR_CODES = {
-    "400": "Bad Request",
-    "401": "Unauthorized",
-    "402": "Payment Required",
-    "403": "Forbidden",
-    "404": "Not Found",
-    "405": "Method Not Allowed",
-    "406": "Not Acceptable",
-    "407": "Proxy Authentication Required",
-    "408": "Request Timeout",
-    "409": "Conflict",
-    "410": "Gone",
-    "411": "Length Required",
-    "412": "Precondition Required",
-    "413": "Request Entry Too Large",
-    "414": "Request-URI Too Long",
-    "415": "Unsupported Media Type",
-    "416": "Requested Range Not Satisfiable",
-    "417": "Expectation Failed",
-    "500": "Internal Server Error",
-    "501": "Not Implemented",
-    "502": "Bad Gateway",
-    "503": "Service Unavailable",
-    "504": "Gateway Timeout",
-    "505": "HTTP Version Not Supported",
-}
-
-const B2_LIST_FILE_NAMES_ENDPOINT = "/b2api/v2/b2_list_file_names"
 
 // entrypoint
 addEventListener('fetch', event => {
@@ -335,39 +285,6 @@ function convertB2Headers(request, response, deleteHeaders=true) {
 
 
 /**
- * Rewrite error responses from Backblaze B2 to have fun little faces. This
- * obfuscates the fact that Backblaze B2 is being used and is generally a
- * more succinct error page for end users.
- *
- * @param request the request from the client to B2
- * @param response the response from B2 that will be copied and modified
- * @returns {Promise<Response>} the new response with the fun face
- */
-async function rewriteErrorResponse(request, response) {
-    console.log("rewriteErrorResponse...")
-    console.log("Original error response:")
-    console.log(response)
-
-    // pick a random face from our ERROR_FACES array
-    const randomIdx = Math.floor(Math.random() * ERROR_FACES.length)
-    const randomFace = ERROR_FACES[randomIdx]
-    const statusText = ERROR_CODES[response.status]
-    let responseBody = `${statusText}\n${randomFace}`
-
-    const newResponse = new Response(responseBody, {
-        status: response.status,
-        statusText: statusText,
-        headers: {
-            "Cache-Control": `public, immutable, max-age=${CACHE_ERRORS_SECONDS}`,
-            "Content-Type": PLAIN_TEXT_CONTENT_TYPE,
-        }
-    })
-
-    return newResponse
-}
-
-
-/**
  * Handle an incoming user request.
  *
  * @param event the fetch event that triggered this listener
@@ -388,9 +305,7 @@ async function handleRequest(event) {
     // r.get('.*/foo', request => handler(request))
 
     // display the possible error message faces when a user visits /faces or /faces.txt
-    r.get("/faces(\\.txt)?", () => new Response(`${ERROR_FACES.join(" \n")}`, {
-        headers: {"Content-Type": PLAIN_TEXT_CONTENT_TYPE}
-    }))
+    r.get("/faces(\\.txt)?", getFacesPage)
     r.get('.*/', request => getB2Directory(request))
     // catch-all route to return a Backblaze B2 file (should be last router rule)
     r.get('.*', request => getB2File(request))
