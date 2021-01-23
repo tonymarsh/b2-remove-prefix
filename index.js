@@ -408,10 +408,10 @@ const FILE_LIST_HTML_TEMPL = (currentDir, fullPath, listings) => `<!doctype html
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>${currentDir}</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/css/bootstrap.min.css" 
-      integrity="sha512-oc9+XSs1H243/FRN9Rw62Fn8EtxjEYWHXRvjS43YtueEewbS6ObfXcJNyohjHqVKFPoXXUxwc+q1K7Dee6vv9g==" 
-      crossorigin="anonymous" />
-    <link rel="stylesheet" href="/s/css/bootstrap-icons.css" />
+    <link rel="stylesheet" href="/s/css/bootstrap.min.css" 
+      integrity="sha256-93wNFzm2GO3EoByj9rKZCwGjAJAwr0nujPaOgwUt8ZQ=" />
+    <link rel="stylesheet" href="/s/css/bootstrap-icons.css" 
+      integrity="sha256-nS+REWFoREFivmnkcigvxgM4EiLgajX3X8C5z0CqGkE=" />
   </head>
   <body class="bg-light">
     <div class="container">
