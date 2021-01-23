@@ -160,10 +160,10 @@ async function handleRequest(event) {
     const request = event.request
 
     // return from cache if we've seen this before and the response isn't stale
-    // const cachedResponse = await CACHE.match(request.clone())
-    // if(cachedResponse !== undefined) {
-    //     return cachedResponse
-    // }
+    const cachedResponse = await CACHE.match(request.clone())
+    if(cachedResponse !== undefined) {
+        return cachedResponse
+    }
 
     const r = new Router()
     // Replace with the appropriate paths and handlers
