@@ -147,7 +147,7 @@ async function handleAuthCronJob(event) {
     const authobj = await authorizeAccount()
 
     // obtain the bucket ID
-    const bucketId = await getBucketId(authobj).then()
+    const bucketId = await getBucketId(authobj)
 
     event.waitUntil(Promise.allSettled([
         B2CDN.put("apiUrl", authobj.apiUrl),
