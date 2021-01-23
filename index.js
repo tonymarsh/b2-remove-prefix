@@ -1,4 +1,5 @@
 import Router from './router'
+import handleAuthCronJob from './authorization'
 
 const CACHE = caches.default
 const ERROR_FACES = [
@@ -486,3 +487,8 @@ const HTML_LINE_ITEM = (link, basename, size, uploaded, action) => {
 </tr>
 `
 }
+
+// entrypoint for Cron Trigger
+addEventListener("scheduled", event => {
+    event.waitUntil(handleAuthCronJob(event))
+})
