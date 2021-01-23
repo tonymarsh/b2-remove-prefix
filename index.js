@@ -105,8 +105,10 @@ function addSecurityHeaders(response) {
  *                              the requested file or an error page
  */
 async function getB2File(request) {
-    const downloadAuth = await B2CDN.get("downloadAuth")
+    const authToken = await B2CDN.get("authToken")
+    // const downloadAuth = await B2CDN.get("downloadAuth")
     const downloadUrl = await B2CDN.get("downloadUrl")
+
     let requestedUrl = new URL(request.url)
     console.log(`requestedUrl = ${requestedUrl.toString()}`)
     let url = new URL(downloadUrl)
@@ -118,7 +120,8 @@ async function getB2File(request) {
             cacheEverything: true,
         },
         headers: {
-            "Authorization": downloadAuth,
+            // "Authorization": downloadAuth,
+            "Authorization": authToken,
         }
     })
     
