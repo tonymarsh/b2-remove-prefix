@@ -6,6 +6,13 @@ import {
 import { rewriteErrorResponse } from './error_handling'
 
 
+/**
+ * Given a URL that ends in a slash (/), list files in the bucket that begin with
+ * that prefix.
+ *
+ * @param {Request} request the user's request for a URL that ends in a slash
+ * @returns {Promise<Response|Response>} an HTML page listing files and folders
+ */
 async function getB2Directory(request) {
     console.log("getB2Directory...")
     const apiUrl = await B2CDN.get("apiUrl")
@@ -47,7 +54,14 @@ async function getB2Directory(request) {
     return htmlResponse
 }
 
-
+/**
+ * Converts the JSON returned from B2's b2_list_file_names endpoint into an HTML
+ * list page of files and "folders".
+ *
+ * @param {Request} request the user's request
+ * @param {Response} response the B2 response to our b2_list_file_names call
+ * @returns {Promise<Response|Response>} an HTML page listing the files/folders
+ */
 async function convertListFileNamesToHTML(request, response) {
     console.log("convertListFileNamesToHTML...")
     const respJson = await response.json()
@@ -163,7 +177,14 @@ function getHumanReadableFileSize(numBytes) {
     return numBytes
 }
 
-
+/**
+ * Full HTML Template for the listing pages.
+ *
+ * @param currentDir the name of the folder we're currently on
+ * @param fullPath the full path to the folder we're currently on
+ * @param listings an array of HTML_LINE_ITEM items
+ * @returns {string} an HTML template for the listing pages
+ */
 const HTML_FILE_LIST = (currentDir, fullPath, listings) => `<!doctype html>
 <html lang="en">
   <head>
@@ -211,7 +232,20 @@ const HTML_FILE_LIST = (currentDir, fullPath, listings) => `<!doctype html>
 </html>
 `
 
-
+/**
+ * HTML table row template for file/folders listings.
+ *
+ * Represents one row, and therefore one file/folder on the table of
+ * files/folders in our current directory.
+ *
+ * @param link what the item will link to when clicked (changes href attribute)
+ * @param basename the file name to display
+ * @param size the value of the Content-Length header sent by the
+ * @param uploaded the timestamp of when the file was uploaded to Backblaze
+ * @param action In B2 the action field is 'folder' for folders.
+ * @returns {string} the HTML template with variables filled in
+ * @constructor
+ */
 const HTML_LINE_ITEM = (link, basename, size, uploaded, action) => {
     let icon
     if (link === "..") {
