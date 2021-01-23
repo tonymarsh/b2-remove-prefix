@@ -9,3 +9,25 @@ export const HTML_CONTENT_TYPE = "text/html;charset=utf-8"
  * @type {string}
  */
 export const B2_LIST_FILE_NAMES_ENDPOINT = "/b2api/v2/b2_list_file_names"
+
+
+// Cache-Control header constants
+/**
+ * Default cache age of most responses
+ *
+ * @type {number}
+ */
+export const CACHE_AGE_SECONDS = 604800  // 1 week in seconds
+
+/**
+ * How long to cache a directory listing page
+ * @type {number}
+ */
+export const CACHE_DIR_SECONDS = 30
+
+/**
+ * How long error pages should be cached for
+ *
+ * @type {number}
+ */
+export const CACHE_ERRORS_SECONDS = 10

@@ -1,6 +1,7 @@
-import {PLAIN_TEXT_CONTENT_TYPE} from './constants'
-
-const CACHE_ERRORS_SECONDS = 10  // cache errors like 404 for 10 seconds
+import {
+    CACHE_ERRORS_SECONDS,
+    PLAIN_TEXT_CONTENT_TYPE,
+} from './constants'
 
 /**
  * A face will be picked from this list at random. Add and remove faces to suit
