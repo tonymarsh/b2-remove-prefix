@@ -202,10 +202,12 @@ const HTML_FILE_LIST = (currentDir, fullPath, listings) => `<!doctype html>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>${currentDir}</title>
 
-    <link rel="stylesheet" href="/s/css/bootstrap.min.css" 
-      integrity="sha256-93wNFzm2GO3EoByj9rKZCwGjAJAwr0nujPaOgwUt8ZQ=" />
-    <link rel="stylesheet" href="/s/css/bootstrap-icons.css" 
-      integrity="sha256-nS+REWFoREFivmnkcigvxgM4EiLgajX3X8C5z0CqGkE=" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css" 
+    integrity="sha512-P5MgMn1jBN01asBgU0z60Qk4QxiXo86+wlFahKrsQf37c9cro517WzVSPPV1tDKzhku2iJ2FVgL67wG03SGnNA==" 
+    crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" 
+    integrity="sha512-SfTiTlX6kk+qitfevl/7LibUOeJWlt9rbyDn92a1DqWOw9vWG2MFoays0sgObmWazO5BQPiFucnnEAjpAB+/Sw==" 
+    crossorigin="anonymous" />
   </head>
   <body class="bg-light">
     <div class="container">
@@ -231,12 +233,6 @@ const HTML_FILE_LIST = (currentDir, fullPath, listings) => `<!doctype html>
     </div>
   </div>
 
-  <footer class="my-5 pt-5 text-muted text-center text-small">
-    <p class="mb-1">Just hostin' wholesome content</p>
-    <ul class="list-inline">
-      <li class="list-inline-item"><a href="/meme/">Memes</a></li>
-    </ul>
-  </footer>
 </div>
 </body>
 </html>
@@ -259,21 +255,21 @@ const HTML_FILE_LIST = (currentDir, fullPath, listings) => `<!doctype html>
 const HTML_LINE_ITEM = (link, basename, size, uploaded, action) => {
     let icon
     if (link === "..") {
-        icon = "arrow-90deg-up"
+        icon = "level-up"
     } else if (action === "folder") {
-        icon = "folder"
+        icon = "folder-o"
     } else if (/\.(jpe?g|png|bmp|tiff?|gif|webp|tga|cr2|nef|ico)$/i.test(basename)) {
-        icon = "file-image"
+        icon = "file-image-o"
     } else if (/\.(pub|txt|ini|cfg|css|js)$/i.test(basename)) {
-        icon = "file-text"
+        icon = "file-text-o"
     } else if (/\.(mp4|mkv|wmv|flv|hls|ogv|avi)$/i.test(basename)) {
-        icon = "file-play"
+        icon = "file-video-o"
     } else if (/\.(mp3|wma|flac|ogg|aac|m4a)$/i.test(basename)) {
-        icon = "file-music"
+        icon = "file-audio-o"
     } else if (/\.(zip|tgz|gz|tar|7z|rar|xz)$/i.test(basename)) {
-        icon = "file-zip"
+        icon = "file-archive-o"
     } else {
-        icon = "file"
+        icon = "file-o"
     }
 
     return TEMPLATE_HTML_LINE_ITEM(link, basename, size, uploaded, icon)
@@ -282,7 +278,7 @@ const HTML_LINE_ITEM = (link, basename, size, uploaded, action) => {
 const TEMPLATE_HTML_LINE_ITEM = (link, basename, size, uploaded, icon) => `
 <tr>
     <th scope='row'>
-        <a href='${link}'><i class='bi bi-${icon}'></i> ${basename}</a>
+        <a href='${link}'><i class='fa fa-${icon}' aria-hidden="true"></i> ${basename}</a>
     </th>
     <td>${size}</td>
     <td class='date-field'>${uploaded}</td>
