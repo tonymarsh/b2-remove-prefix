@@ -1,4 +1,5 @@
 # B2 CDN
+![Screenshot of a Directory Listing Page](https://murp.me/2101/chromenKaN.png)
 
 A Cloudflare Worker for serving and browsing content in a private Backblaze B2
 bucket.
