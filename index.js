@@ -23,12 +23,6 @@ const B2 = {
 }
 
 
-// entrypoint
-addEventListener('fetch', event => {
-    event.respondWith(handleRequest(event))
-})
-
-
 /**
  * Add extra security headers to get an A on https://securityheaders.com/
  *
@@ -114,6 +108,12 @@ async function handleRequest(event) {
 
     return response
 }
+
+
+// entrypoint for HTTP Request
+addEventListener('fetch', event => {
+    event.respondWith(handleRequest(event))
+})
 
 
 // entrypoint for Cron Trigger
