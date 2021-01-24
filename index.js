@@ -60,6 +60,13 @@ async function refreshB2Config() {
 }
 
 
+async function redirect(event) {
+    const url = new URL(event.request.url)
+    url.hostname = MAIN_DOMAIN
+    return Response.redirect(url.toString(), 301)
+}
+
+
 /**
  * Handle an incoming user request.
  *
@@ -101,7 +108,9 @@ async function handleRequest(event) {
 
     // evaluate this request and get the response from the matching route handler
     const response = await r.route(request)
-    addSecurityHeaders(response)
+    if(response.status < 300 || response.status >= 400) {
+        addSecurityHeaders(response)
+    }
 
     // put this response in the cache in the background (the Worker will stay alive to finish the job)
     event.waitUntil(CACHE.put(request.clone(), response.clone()));
@@ -112,7 +121,15 @@ async function handleRequest(event) {
 
 // entrypoint for HTTP Request
 addEventListener('fetch', event => {
-    event.respondWith(handleRequest(event))
+    const requestUrl = new URL(event.request.url)
+    const domain = requestUrl.hostname
+    if(domain === MAIN_DOMAIN || domain === DIR_DOMAIN) {
+        event.respondWith(handleRequest(event))
+    }
+    else {
+        // redirect any non-main domain to the main domain (i.e. www.example.com to example.com)
+        event.respondWith(redirect(event))
+    }
 })
 
 

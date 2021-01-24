@@ -25,6 +25,10 @@ import {
 async function getB2File(request, b2) {
     let requestedUrl = new URL(request.url)
     console.log(`requestedUrl = ${requestedUrl.toString()}`)
+    if(requestedUrl.hostname === DIR_DOMAIN) {
+        requestedUrl.hostname = MAIN_DOMAIN
+        return Response.redirect(requestedUrl.toString(), 301)
+    }
     let url = new URL(b2.data.downloadUrl)
     url.pathname = `/file/${B2BUCKET}/${requestedUrl.pathname}`
 

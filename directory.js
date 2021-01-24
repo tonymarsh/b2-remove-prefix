@@ -18,10 +18,15 @@ import { rewriteErrorResponse } from './error_handling'
 async function getB2Directory(request, b2) {
     console.log("getB2Directory...")
 
-    const url = new URL(b2.data.apiUrl)
-    url.pathname = B2_LIST_FILE_NAMES_ENDPOINT
     const requestedUrl = new URL(request.url)
     console.log(`requestedUrl.pathname = ${requestedUrl.pathname}`)
+    if(requestedUrl.hostname !== DIR_DOMAIN) {
+        return rewriteErrorResponse(request, new Response(null, { status: 404, }))
+    }
+
+    const url = new URL(b2.data.apiUrl)
+    url.pathname = B2_LIST_FILE_NAMES_ENDPOINT
+
     const prefix = requestedUrl.pathname.substring(1)  // chop off first / character
     console.log(`prefix = ${prefix}`)
 
@@ -65,6 +70,8 @@ async function convertListFileNamesToHTML(request, response) {
     console.log("convertListFileNamesToHTML...")
     const respJson = await response.json()
     const requestUrl = new URL(request.url)
+    const baseFileUrl = new URL(request.url)
+    baseFileUrl.hostname = MAIN_DOMAIN
     const fullPath = requestUrl.pathname.substring(1)
     let currentDir = requestUrl.pathname.substring(1).match(/([^/]+)\/$/)
     if(currentDir) {
@@ -104,10 +111,10 @@ async function convertListFileNamesToHTML(request, response) {
     }
 
     for(const fldr of folders) {
-        listings += convertFileInfoJsonToHTML(fldr, prefixLength)
+        listings += convertFileInfoJsonToHTML(requestUrl, fldr, prefixLength)
     }
     for(const file of files) {
-        listings += convertFileInfoJsonToHTML(file, prefixLength)
+        listings += convertFileInfoJsonToHTML(baseFileUrl, file, prefixLength)
     }
 
     let html = HTML_FILE_LIST(currentDir, fullPath, listings)
@@ -125,11 +132,13 @@ async function convertListFileNamesToHTML(request, response) {
  * Given a file object's JSON returned from B2's b2_list_file_names endpoint,
  * returns a row for an HTML table as defined by the HTML_LINE_ITEM template.
  *
- * @param file
- * @param prefixLength
- * @returns {string}
+ * @param baseUrl a URL object or string that will make up the absolute link
+ * @param file one file object from the list returned by b2_list_file_names
+ * @param prefixLength the length of the path leading up to this file name
+ * @returns {string} the HTML_LINE_ITEM template defined below filled out for this file in particular
  */
-function convertFileInfoJsonToHTML(file, prefixLength) {
+function convertFileInfoJsonToHTML(baseUrl, file, prefixLength) {
+    let url = new URL(baseUrl)
     let basename = file.fileName.substring(prefixLength)
     let dateStr = "", size = ""
     if(file.action !== "folder") {
@@ -138,7 +147,9 @@ function convertFileInfoJsonToHTML(file, prefixLength) {
         size = getHumanReadableFileSize(file.contentLength)
     }
 
-    return HTML_LINE_ITEM(basename, basename, size, dateStr, file.action)
+    url.pathname = file.fileName
+
+    return HTML_LINE_ITEM(url.toString(), basename, size, dateStr, file.action)
 }
 
 
