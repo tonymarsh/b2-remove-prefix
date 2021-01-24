@@ -28,17 +28,12 @@
  * free-tier limits (2,500 free Class C transactions daily at time of writing).
  */
 
-// B2 API URLs / Endpoints
-const B2_AUTHORIZE_URL = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
-const B2_LIST_BUCKETS_ENDPOINT = "/b2api/v2/b2_list_buckets"
-const B2_GET_DOWNLOAD_AUTHORIZATION_ENDPOINT = "/b2api/v2/b2_get_download_authorization"
-
-/**
- * 24 hours in seconds, the max duration of an authorization token's validity
- *
- * @type {number}
- */
-const AUTH_TOKEN_MAX_AGE = 86400
+import {
+    B2_AUTHORIZE_URL,
+    B2_LIST_BUCKETS_ENDPOINT,
+    B2_GET_DOWNLOAD_AUTHORIZATION_ENDPOINT,
+    KV_CONFIG_KEY,
+} from './constants'
 
 
 /**
@@ -64,7 +59,7 @@ async function authorizeAccount() {
  * Use the authorization object returned by authorizeAccount
  * to get the ID of the bucket named in the B2BUCKET variable
  *
- * @param {object} authobj the JSON object returned by a call to authorizeAccount
+ * @param authobj the JSON object returned by a call to authorizeAccount
  */
 async function getBucketId(authobj) {
     // console.log("getBucketId...")
@@ -96,8 +91,6 @@ async function getBucketId(authobj) {
 
     const bucketList = await response.json()
 
-    // console.log(`bucketId = ${bucketList.buckets[0].bucketId}`)
-    // console.log(`bucketName = ${bucketList.buckets[0].bucketName}`)
     return bucketList.buckets[0].bucketId
 }
 
@@ -135,30 +128,49 @@ async function getDownloadAuthorization(authobj, bucketId) {
 
 
 /**
+ * Use our application ID and application Key to obtain an authorization token.
+ *
+ * @returns {Promise<{authorizationToken: string, apiUrl: string, downloadUrl: string, bucketId: string}>}
+ */
+export async function getB2ConfigObject() {
+    // obtain authorization token
+    const authobj = await authorizeAccount()
+    /*
+    Application keys that are restricted to a single bucket already have the `bucketId` in the response. However, that
+    may not be the case for the key we authorized with. Therefore, we resolve the bucket name found in the B2BUCKET
+    variable to a Bucket ID, and put it back in the authobj.
+     */
+    const bucketId = await getBucketId(authobj)
+    const b2config = {
+        apiUrl: authobj.apiUrl,
+        authorizationToken: authobj.authorizationToken,
+        bucketId: bucketId,
+        downloadUrl: authobj.downloadUrl,
+    }
+
+    return b2config
+}
+
+/**
+ * Put our B2 configuration object into Workers KV
+ *
+ * @param b2config object containing our auth token and other info we need to access private buckets
+ * @returns {Promise<*>} a promise that resolves once the config object is in KV
+ */
+export async function persistConfigObject(b2config) {
+    return B2CDN.put(KV_CONFIG_KEY, JSON.stringify(b2config))
+}
+
+
+/**
  * Obtains essential information from the Backblaze B2 API (authorization token, Bucket ID, and API/download URLs)
  * and puts it in Workers KV for retrieval by our other Worker that actually does the downloading from the bucket.
  *
- * This worker is intended to be executed by a cron job and does not need a user's HTTP request.
- *
- * @param {FetchEvent|ScheduledEvent} event the fetch event that triggered the Worker
+ * @param {Event} event the fetch event that triggered the Worker
  */
 async function handleAuthCronJob(event) {
-    // obtain authorization token
-    const authobj = await authorizeAccount()
-
-    // obtain the bucket ID
-    const bucketId = await getBucketId(authobj)
-
-    event.waitUntil(Promise.allSettled([
-        B2CDN.put("apiUrl", authobj.apiUrl),
-        B2CDN.put("authToken", authobj.authorizationToken, {expirationTtl: AUTH_TOKEN_MAX_AGE}),
-        B2CDN.put("downloadUrl", authobj.downloadUrl),
-        B2CDN.put("bucketId", bucketId),
-    ]))
-
-    return new Response("OK", {
-        headers: {'content-type': 'text/plain'},
-    })
+    const b2config = await getB2ConfigObject()
+    return persistConfigObject(b2config)
 }
 
 export default handleAuthCronJob

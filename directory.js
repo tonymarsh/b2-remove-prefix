@@ -2,6 +2,7 @@ import {
     B2_LIST_FILE_NAMES_ENDPOINT,
     CACHE_DIR_SECONDS,
     HTML_CONTENT_TYPE,
+    KV_CONFIG_KEY,
 } from './constants'
 import { rewriteErrorResponse } from './error_handling'
 
@@ -11,15 +12,13 @@ import { rewriteErrorResponse } from './error_handling'
  * that prefix.
  *
  * @param {Request} request the user's request for a URL that ends in a slash
+ * @param {object} b2 the b2config object
  * @returns {Promise<Response|Response>} an HTML page listing files and folders
  */
-async function getB2Directory(request) {
+async function getB2Directory(request, b2) {
     console.log("getB2Directory...")
-    const apiUrl = await B2CDN.get("apiUrl")
-    const authToken = await B2CDN.get("authToken")
-    const bucketId = await B2CDN.get("bucketId")
 
-    const url = new URL(apiUrl)
+    const url = new URL(b2.data.apiUrl)
     url.pathname = B2_LIST_FILE_NAMES_ENDPOINT
     const requestedUrl = new URL(request.url)
     console.log(`requestedUrl.pathname = ${requestedUrl.pathname}`)
@@ -27,7 +26,7 @@ async function getB2Directory(request) {
     console.log(`prefix = ${prefix}`)
 
     const requestBody = {
-        bucketId: bucketId,
+        bucketId: b2.data.bucketId,
         maxFileCount: 10000,
         prefix: prefix,
         delimiter: "/"
@@ -36,7 +35,7 @@ async function getB2Directory(request) {
     const response = await fetch(url.toString(), {
         method: "POST",
         headers: {
-            "Authorization": authToken,
+            "Authorization": b2.data.authorizationToken,
             "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody)

@@ -3,8 +3,24 @@ import handleAuthCronJob from './authorization'
 import {getFacesPage, rewriteErrorResponse} from './error_handling'
 import getB2Directory from './directory'
 import getB2File from './file_download'
+import {
+    KV_CONFIG_KEY,
+    SECONDS_TO_CACHE_KV_AUTH_INVALID,
+    SECONDS_TO_CACHE_KV_AUTH_STALE,
+} from './constants'
 
 const CACHE = caches.default
+
+/**
+ * Our B2 object will get pulled from KV in the first request and will persist here until
+ * the Worker is killed (otherwise having it out here in global scope saves us some KV calls)
+ *
+ * @type {object}
+ */
+const B2 = {
+    date: undefined,  // the JSON we persisted in KV with our auth token and more
+    lastRefresh: undefined,  // timestamp of when we last fetched our auth token from KV
+}
 
 
 // entrypoint
@@ -39,6 +55,18 @@ function addSecurityHeaders(response) {
 
 
 /**
+ * Attempts to pull our b2config object out of KV storage.
+ *
+ * @returns {Promise<void>}
+ */
+async function refreshB2Config() {
+    console.log("Getting our B2 authorization token from KV...")
+    B2.data = JSON.parse(await B2CDN.get(KV_CONFIG_KEY))
+    B2.lastRefresh = Date.now()
+}
+
+
+/**
  * Handle an incoming user request.
  *
  * @param event the fetch event that triggered this listener
@@ -50,7 +78,20 @@ async function handleRequest(event) {
     // return from cache if we've seen this before and the response isn't stale
     const cachedResponse = await CACHE.match(request.clone())
     if(cachedResponse !== undefined) {
+        console.log(`Served cached response for ${event.request.url}`)
         return cachedResponse
+    }
+
+    let secondsSinceRefresh = (Date.now() - B2.lastRefresh) / 1000
+
+    if(B2.data === undefined || isNaN(secondsSinceRefresh) || secondsSinceRefresh > SECONDS_TO_CACHE_KV_AUTH_INVALID) {
+        // the config is either very old or hasn't even been loaded from KV yet
+        await refreshB2Config()
+    }
+    else if(secondsSinceRefresh > SECONDS_TO_CACHE_KV_AUTH_STALE) {
+        // we'll be using the current token but this schedules the latest one to be read from KV
+        console.log("Auth token is a little old, use it, but also refresh it in the background from KV")
+        event.waitUntil(refreshB2Config())
     }
 
     const r = new Router()
@@ -60,9 +101,9 @@ async function handleRequest(event) {
 
     // display the possible error message faces when a user visits /faces or /faces.txt
     r.get("/faces(\\.txt)?", getFacesPage)
-    r.get('.*/', request => getB2Directory(request))
+    r.get('.*/', request => getB2Directory(request, B2))
     // catch-all route to return a Backblaze B2 file (should be last router rule)
-    r.get('.*', request => getB2File(request))
+    r.get('.*', request => getB2File(request, B2))
 
     // evaluate this request and get the response from the matching route handler
     const response = await r.route(request)

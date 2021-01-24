@@ -5,7 +5,7 @@
 import { rewriteErrorResponse } from './error_handling'
 import {
     CACHE_AGE_SECONDS,
-    PLAIN_TEXT_CONTENT_TYPE
+    PLAIN_TEXT_CONTENT_TYPE,
 } from './constants'
 
 
@@ -18,16 +18,14 @@ import {
  *
  * @param request the request from a client that will be rewritten to fetch from
  *                a Backblaze B2 bucket
+ * @param {object} b2 the b2config object
  * @returns {Promise<Response>} the Response to the client that will either be
  *                              the requested file or an error page
  */
-async function getB2File(request) {
-    const authToken = await B2CDN.get("authToken")
-    const downloadUrl = await B2CDN.get("downloadUrl")
-
+async function getB2File(request, b2) {
     let requestedUrl = new URL(request.url)
     console.log(`requestedUrl = ${requestedUrl.toString()}`)
-    let url = new URL(downloadUrl)
+    let url = new URL(b2.data.downloadUrl)
     url.pathname = `/file/${B2BUCKET}/${requestedUrl.pathname}`
 
     const response = await fetch(url.toString(), {
@@ -36,8 +34,7 @@ async function getB2File(request) {
             cacheEverything: true,
         },
         headers: {
-            // "Authorization": downloadAuth,
-            "Authorization": authToken,
+            "Authorization": b2.data.authorizationToken,
         }
     })
 
