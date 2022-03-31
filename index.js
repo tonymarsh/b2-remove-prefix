@@ -1,7 +1,6 @@
 import Router from './router'
 import handleAuthCronJob from './authorization'
 import {getFacesPage, rewriteErrorResponse} from './error_handling'
-import getB2Directory from './directory'
 import getB2File from './file_download'
 import {
     KV_CONFIG_KEY,
@@ -113,7 +112,6 @@ async function handleRequest(event) {
 
     // display the possible error message faces when a user visits /faces or /faces.txt
     r.get("/faces(\\.txt)?", getFacesPage)
-    r.get('.*/', request => getB2Directory(request, B2))
     // catch-all route to return a Backblaze B2 file (should be last router rule)
     r.get('.*', request => getB2File(request, B2))
 
